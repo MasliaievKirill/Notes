@@ -1,6 +1,8 @@
 package com.demo.notes;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,6 +11,7 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 public class AddNoteActivity extends AppCompatActivity {
 
@@ -17,10 +20,17 @@ public class AddNoteActivity extends AppCompatActivity {
     private Spinner spinnerDayOfWeek;
     private RadioGroup radioGroupPriority;
 
+    private MainViewModel viewModel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_note);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
+        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
         editTextTitle = findViewById(R.id.editTextTitle);
         editTextDescription = findViewById(R.id.editTextDescription);
         spinnerDayOfWeek = findViewById(R.id.spinnerDayOfWeek);
@@ -30,13 +40,21 @@ public class AddNoteActivity extends AppCompatActivity {
     public void onClickSaveNote(View view) {
         String title = editTextTitle.getText().toString().trim();
         String description = editTextDescription.getText().toString().trim();
-        String dayOfWeek = spinnerDayOfWeek.getSelectedItem().toString();
+        int dayOfWeek = spinnerDayOfWeek.getSelectedItemPosition();
         int radioButtonId = radioGroupPriority.getCheckedRadioButtonId();
         RadioButton radioButton = findViewById(radioButtonId);
         int priority = Integer.parseInt(radioButton.getText().toString());
-        Note note = new Note(title,description,dayOfWeek,priority);
-        MainActivity.notes.add(note);
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
+        if (isFilled(title, description)) {
+            Note note = new Note(title, description, dayOfWeek, priority);
+            viewModel.insertNote(note);
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+        } else {
+            Toast.makeText(this, R.string.warning_fill_fileds, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean isFilled (String title, String description) {
+        return !title.isEmpty() && !description.isEmpty();
     }
 }
